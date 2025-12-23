@@ -1,0 +1,29 @@
+.env
+# Virtual environment
+.venv/
+venv/
+
+# Environment variables
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# ChromaDB persistence
+chroma_db/
+
+# Local data
+data/
+
+# Local experiments / scratch files
+exp.py
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor / IDE
+.vscode/
+.idea/
