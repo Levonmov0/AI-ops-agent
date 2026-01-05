@@ -1,29 +1,91 @@
-.env
-# Virtual environment
-.venv/
-venv/
-
 # Environment variables
 .env
+.env.local
+.env.*.local
 
-# Python cache
+# Python
 __pycache__/
+*.py[cod]
+*$py.class
 *.pyc
 *.pyo
+*.so
+.Python
 
-# ChromaDB persistence
+# Virtual Environment
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Distribution / Packaging
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Vector Database (ChromaDB)
 chroma_db/
 
-# Local data
-data/
+# Database files
+*.db
+*.sqlite
+*.sqlite3
 
-# Local experiments / scratch files
-exp.py
+# Logs
+*.log
+logs/
+*.log.*
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
 # OS files
 .DS_Store
+.AppleDouble
+.LSOverride
 Thumbs.db
 
-# Editor / IDE
-.vscode/
-.idea/
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Jupyter
+.ipynb_checkpoints
+*.ipynb
+
+# Claude Code plans
+.claude/
+
+# Local data / experiments
+data/
+exp.py
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Linting
+.ruff_cache/
+
+# LangChain / LangSmith
+.langchain/
+.langsmith/
+
+# Package manager locks (optional - uncomment if not committing locks)
+# poetry.lock
+# Pipfile.lock
+# pdm.lock
