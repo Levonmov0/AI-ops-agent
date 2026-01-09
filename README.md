@@ -1,54 +1,75 @@
-# AI Operations Agent (Ongoing)
+# AI Operations Agent
 
-This project explores how large language models (LLMs) can be used to perform
-real business operations using retrieval-augmented generation (RAG),
-tool-calling, and agent-based architectures.
-
-The current version implements a working RAG pipeline over a small internal document
-(PDF), serving as the foundation for a larger AI operations system.
+A multi-agent AI system for gym operations that combines retrieval-augmented generation (RAG), database operations, and intelligent routing to handle user requests.
 
 ---
 
-## Current Features
+## Features
 
-- PDF document ingestion and chunking
-- Vector storage and retrieval using ChromaDB
-- Retrieval-augmented question answering
-- CLI-based entrypoint for querying documents
-- Centralized configuration for OpenAI and storage
+### Multi-Agent Architecture
+- **Front Desk Agent**: Routes user requests to specialized agents or responds directly
+- **RAG Agent**: Answers questions about gym policies, hours, and programs using document retrieval
+- **Booking Agent**: Handles class bookings, cancellations, and availability checks with Supabase integration
 
----
-
-## Project Goal
-
-The long-term goal of this project is to build an AI Operations Agent capable of:
-
-- Handling user-facing requests (FrontDeskAgent)
-- Retrieving internal knowledge using RAG
-- Executing safe, confirmed business actions (e.g. bookings, subscriptions)
-- Orchestrating multiple specialized agents
-- Operating with authentication, logging, and safety constraints
+### Core Capabilities
+- PDF document ingestion and vector search using ChromaDB
+- Class booking system with member verification
+- Natural language date handling (converts "tomorrow" to YYYY-MM-DD)
+- Confirmation workflow for sensitive operations (cancellations)
+- Persistent conversation history across interactions
 
 ---
 
-## Current Tech Stack
+## Tech Stack
 
-- Python
-- OpenAI API
-- ChromaDB
-- Retrieval-Augmented Generation (RAG)
+- **Framework**: LangGraph for agent orchestration
+- **LLM**: OpenAI GPT-4o
+- **Vector Database**: ChromaDB with OpenAI embeddings
+- **Backend Database**: Supabase (PostgreSQL)
+- **Libraries**: LangChain, python-dotenv
+
+---
+
+## Current Usage Examples
+
+```
+You: What are the gym's operating hours?
+Assistant: [RAG Agent retrieves info from PDF]
+
+You: Book me a yoga class for tomorrow
+Assistant: [Booking Agent converts date and books class]
+
+You: Cancel booking ABC123
+Assistant: Are you sure? Reply "yes" to confirm.
+You: yes
+Assistant: Successfully cancelled booking ABC123
+```
+
+---
+
+## Current Project Structure
+
+```
+backend/
+├── agents/
+│   ├── front_desk_agent.py
+│   ├── rag_agent.py
+│   └── booking_agent.py
+├── tools/
+│   ├── rag_tools.py
+│   └── booking_tools.py
+├── main.py
+└── .env
+```
+
+---
+
+## Next Steps
+
+- [ ] Frontend interface
 
 ---
 
 ## Status
 
-This project is under active development.
-The current implementation focuses on validating the RAG foundation before
-introducing agent orchestration and tool-calling.
-
----
-
-## How to Run
-
-```bash
-python backend/main.py
+Active development. Current focus: developing the frontend and expanding agent capabilities

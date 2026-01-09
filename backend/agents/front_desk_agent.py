@@ -1,8 +1,11 @@
+from pathlib import Path
 from dotenv import load_dotenv
 from langchain_core.messages import SystemMessage
 from langchain_openai import ChatOpenAI
 
-load_dotenv()
+# Load environment variables from backend/.env
+env_path = Path(__file__).parent.parent / ".env"
+load_dotenv(dotenv_path=env_path)
 # Configuration
 MODEL_NAME = "gpt-4o"
 TEMPERATURE = 0.3
@@ -56,17 +59,17 @@ def route_request(state):
     intent = state["intent"]
 
     if intent == "DIRECT_RESPONSE":
-        print("intent is DIRECT_RESPONSE")
+        print("     intent is DIRECT_RESPONSE")
         return "END" 
     
     elif intent == "RAGAgent":
-        print("intent is RAGAgent")
+        print("     intent is RAGAgent")
         return "rag_call_llm"
     
     elif intent == "BookingAgent":
-        print("intent is BookingAgent")
-        return "booking_agent_placeholder"
+        print("     intent is BookingAgent")
+        return "booking_call_llm"
  
     else:
-        print("intent is unknown")
+        print("     intent is unknown")
         return "unknown_intent_placeholder"

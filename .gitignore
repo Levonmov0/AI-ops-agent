@@ -1,4 +1,7 @@
 # Environment variables
+backend/.env
+frontend/.env
+frontend/.env.local
 .env
 .env.local
 .env.*.local
@@ -12,7 +15,9 @@ __pycache__/
 *.so
 .Python
 
-# Virtual Environment
+# Virtual Environment (Python)
+backend/.venv/
+backend/venv/
 .venv/
 venv/
 env/
@@ -27,6 +32,7 @@ dist/
 *.egg
 
 # Vector Database (ChromaDB)
+backend/chroma_db/
 chroma_db/
 
 # Database files
@@ -72,6 +78,9 @@ tmp/
 temp/
 *.tmp
 *.temp
+
+# PDF documents (may contain sensitive information)
+*.pdf
 
 # Type checking
 .mypy_cache/

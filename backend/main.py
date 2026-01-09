@@ -2,7 +2,7 @@ from typing import TypedDict, Annotated, Sequence
 from operator import add as add_messages
 from langgraph.graph import StateGraph, END
 from langchain_core.messages import BaseMessage, HumanMessage
-from backend.agents import rag_agent, front_desk_agent
+from .agents import booking_agent, rag_agent, front_desk_agent
 
 
 # State
@@ -25,6 +25,10 @@ def build_master_graph():
     graph.add_node("rag_call_llm", rag_agent.call_llm_rag)
     graph.add_node("rag_execute_tools", rag_agent.execute_rag_tools)
 
+    #Booking Agent nodes
+    graph.add_node("booking_call_llm", booking_agent.call_llm_booking)
+    graph.add_node("booking_execute_tools", booking_agent.execute_booking_tools)
+
     # Entry point is FrontDeskAgent
     graph.set_entry_point("classify_intent")
 
@@ -35,7 +39,7 @@ def build_master_graph():
         {
             "END": END,  # Direct response from FrontDeskAgent
             "rag_call_llm": "rag_call_llm",
-            "booking_agent_placeholder": END,
+            "booking_call_llm": "booking_call_llm",
         }
     )
 
@@ -46,6 +50,14 @@ def build_master_graph():
         {True: "rag_execute_tools", False: END}
     )
     graph.add_edge("rag_execute_tools", "rag_call_llm")
+
+    # Booking flow
+    graph.add_conditional_edges(
+        "booking_call_llm",
+        booking_agent.should_continue_booking,
+        {True: "booking_execute_tools", False: END}
+    )
+    graph.add_edge("booking_execute_tools", "booking_call_llm")
 
     return graph.compile()
 
@@ -87,8 +99,14 @@ def run(compiled_graph):
 # Main
 def main():
     """Main function."""
+    import os
+
+    # Get PDF path from environment variable or use default
+    pdf_path = os.getenv("RAG_PDF_PATH", "Strength_and_Conditioning_RAG_Test_Document.pdf")
+
     # Initialize RAG components
-    rag_agent.initialize_rag_components("Strength_and_Conditioning_RAG_Test_Document.pdf")
+    rag_agent.initialize_rag_components(pdf_path)
+    booking_agent.initialize_booking_agent_components()
 
     # Build graph
     master_graph = build_master_graph()

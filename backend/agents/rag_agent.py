@@ -1,15 +1,16 @@
 import os
-from typing import TypedDict, Annotated, Sequence
+from pathlib import Path
 from dotenv import load_dotenv
-from langchain_core.messages import BaseMessage, SystemMessage, ToolMessage
+from langchain_core.messages import SystemMessage, ToolMessage
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
-from operator import add as add_messages
-from backend.tools.rag_tools import retriever_tool, set_retriever
+from ..tools.rag_tools import retriever_tool, set_retriever
 
-load_dotenv()
+# Load environment variables from backend/.env
+env_path = Path(__file__).parent.parent / ".env"
+load_dotenv(dotenv_path=env_path)
 
 # Configuration
 MODEL_NAME = "gpt-4o"
@@ -17,7 +18,7 @@ TEMPERATURE = 0
 EMBEDDING_MODEL = "text-embedding-3-small"
 CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 200
-PERSIST_DIRECTORY = "chroma_db"
+PERSIST_DIRECTORY = str(Path(__file__).parent.parent / "chroma_db")
 COLLECTION_NAME = "langgraph-rag-collection"
 TOP_K = 5
 
@@ -170,7 +171,7 @@ def execute_rag_tools(state):
     results = []
 
     for t in tool_calls:
-        print(f"Calling tool: {t['name']} with input: {t['args']}")
+        print(f"    Calling tool: {t['name']} with input: {t['args']}")
 
         if t['name'] not in _tools_dict:
             raise ValueError(f"Tool {t['name']} not found in tools dictionary.")
