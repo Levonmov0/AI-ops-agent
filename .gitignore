@@ -1,39 +1,25 @@
 # Environment variables
-backend/.env
-frontend/.env
-frontend/.env.local
 .env
 .env.local
 .env.*.local
+backend/.env
+frontend/.env
+frontend/.env.local
 
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.pyc
-*.pyo
-*.so
-.Python
-
-# Virtual Environment (Python)
-backend/.venv/
-backend/venv/
-.venv/
-venv/
-env/
-ENV/
-env.bak/
-venv.bak/
-
-# Distribution / Packaging
-build/
+# Node.js
+node_modules/
 dist/
-*.egg-info/
-*.egg
+*.tsbuildinfo
+.npm
+.yarn
 
 # Vector Database (ChromaDB)
 backend/chroma_db/
 chroma_db/
+
+# Vector store (HNSWLib)
+vectorstore/
+backend/vectorstore/
 
 # Database files
 *.db
@@ -59,21 +45,18 @@ logs/
 Thumbs.db
 
 # Testing
-.pytest_cache/
-.coverage
-htmlcov/
-.tox/
+coverage/
+.nyc_output/
 
-# Jupyter
-.ipynb_checkpoints
-*.ipynb
+# LangChain / LangSmith
+.langchain/
+.langsmith/
 
 # Claude Code plans
 .claude/
 
 # Local data / experiments
 data/
-exp.py
 tmp/
 temp/
 *.tmp
@@ -82,19 +65,5 @@ temp/
 # PDF documents (may contain sensitive information)
 *.pdf
 
-# Type checking
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Linting
-.ruff_cache/
-
-# LangChain / LangSmith
-.langchain/
-.langsmith/
-
-# Package manager locks (optional - uncomment if not committing locks)
-# poetry.lock
-# Pipfile.lock
-# pdm.lock
+# Documentation drafts
+architecture.md
