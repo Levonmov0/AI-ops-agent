@@ -9,6 +9,19 @@ import { DynamicStructuredTool } from "@langchain/core/tools";
 import { z } from "zod";
 import { supabase } from "../lib/supabase.js";
 
+/**
+ * Looks up a member's internal PK by their public member_id.
+ * Returns null if not found.
+ */
+async function findMemberPk(member_id: string): Promise<number | null> {
+  const { data } = await supabase
+    .from("members")
+    .select("id")
+    .eq("member_id", member_id)
+    .single();
+  return data?.id ?? null;
+}
+
 export const checkAvailabilityTool = new DynamicStructuredTool({
   name: "check_availability",
   description: "Check if a class has available spots",
@@ -54,13 +67,8 @@ export const bookClassTool = new DynamicStructuredTool({
   func: async ({ member_id, class_name, date }) => {
     const className = class_name.toLowerCase();
 
-    const { data: member } = await supabase
-      .from("members")
-      .select("*")
-      .eq("member_id", member_id)
-      .single();
-
-    if (!member) {
+    const memberPk = await findMemberPk(member_id);
+    if (!memberPk) {
       return `Member ID ${member_id} not found.`;
     }
 
@@ -68,16 +76,21 @@ export const bookClassTool = new DynamicStructuredTool({
       .from("classes")
       .select("*")
       .eq("class_name", className)
+      .eq("class_date", date)
       .single();
 
     if (!classData) {
-      return `Class '${class_name}' not found.`;
+      return `Class '${class_name}' on ${date} not found.`;
+    }
+
+    if (classData.spots_available <= 0) {
+      return `Class '${class_name}' on ${date} is fully booked. No spots available.`;
     }
 
     const { data: booking, error } = await supabase
       .from("class_bookings")
       .insert({
-        member_id: member.id,
+        member_id: memberPk,
         class_id: classData.id,
       })
       .select()
@@ -100,17 +113,10 @@ export const cancelBookingTool = new DynamicStructuredTool({
     member_id: z.string().describe("Member's ID"),
   }),
   func: async ({ booking_id, member_id }) => {
-    const { data: memberRes } = await supabase
-      .from("members")
-      .select("id")
-      .eq("member_id", member_id)
-      .single();
-
-    if (!memberRes) {
+    const memberPk = await findMemberPk(member_id);
+    if (!memberPk) {
       return `Member ID ${member_id} not found.`;
     }
-
-    const memberPk = memberRes.id;
 
     const { data: bookingRes } = await supabase
       .from("class_bookings")
@@ -158,6 +164,35 @@ export const listAvailableClassesTool = new DynamicStructuredTool({
   },
 });
 
+export const listMemberBookingsTool = new DynamicStructuredTool({
+  name: "list_member_bookings",
+  description: "List all bookings for a specific member",
+  schema: z.object({
+    member_id: z.string().describe("Member's ID"),
+  }),
+  func: async ({ member_id }) => {
+    const memberPk = await findMemberPk(member_id);
+    if (!memberPk) {
+      return `Member ID ${member_id} not found.`;
+    }
+
+    const { data: bookings } = await supabase
+      .from("class_bookings")
+      .select("booking_id, classes(class_name, class_date)")
+      .eq("member_id", memberPk);
+
+    if (!bookings || bookings.length === 0) {
+      return `No bookings found for member ${member_id}.`;
+    }
+
+    const lines = bookings.map((b: any) =>
+      `Booking ID: ${b.booking_id} - ${b.classes.class_name} on ${b.classes.class_date}`
+    );
+
+    return lines.join("\n");
+  },
+});
+
 /** All booking tools available to the BookingAgent. */
 export const bookingTools = [
   bookClassTool,
@@ -165,4 +200,5 @@ export const bookingTools = [
   getCurrentDateTool,
   checkAvailabilityTool,
   listAvailableClassesTool,
+  listMemberBookingsTool,
 ];

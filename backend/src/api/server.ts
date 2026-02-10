@@ -10,6 +10,7 @@ import { HumanMessage, BaseMessage } from "@langchain/core/messages";
 import { initializeRagComponents } from "../agents/ragAgent.js";
 import { initializeBookingComponents } from "../agents/bookingAgent.js";
 import { buildMasterGraph } from "../graph/masterGraph.js";
+import { getResponseContent } from "../lib/agentUtils.js";
 import "dotenv/config";
 
 const app = express();
@@ -39,19 +40,33 @@ app.post("/api/chat", async (req: Request, res: Response) => {
   history.push(new HumanMessage(message));
 
   try {
+    const prevLength = history.length;
     const result = await compiledGraph.invoke({ messages: history });
     sessions.set(sessionId, result.messages as BaseMessage[]);
+    const newMessages = result.messages.slice(prevLength);
+    const toolsUsed = newMessages.filter((msg: BaseMessage) => msg.getType() === "tool").map((msg: any) => msg.name)
+    const agentUsed = result.intent
 
-    const lastMessage = result.messages[result.messages.length - 1];
-    const content =
-      typeof lastMessage.content === "string"
-        ? lastMessage.content
-        : JSON.stringify(lastMessage.content);
+    const content = getResponseContent(result.messages);
+    
+    const confirmationMatch = content.match(/\[CONFIRM_ACTION\]([\s\S]*?)\[\/CONFIRM_ACTION\]/);
+    
+    if (confirmationMatch) {
+      const parsed = JSON.parse(confirmationMatch[1].trim());
+      return res.json({
+        response: parsed.message,
+        type: "confirmation",
+        sessionId,
+        tools: toolsUsed,
+        agent: agentUsed
+      })
+    }
 
-    return res.json({ response: content, sessionId });
+    return res.json({ response: content, type: "text",  sessionId, tools: toolsUsed, agent: agentUsed});
   } catch (error) {
     console.error("Chat error:", error);
-    return res.status(500).json({ error: "Internal server error" });
+    const message = error instanceof Error ? error.message : "Something went wrong";
+    return res.status(500).json({ error: message, type: "error" });
   }
 });
 

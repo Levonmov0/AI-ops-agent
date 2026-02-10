@@ -13,6 +13,10 @@ dist/
 .npm
 .yarn
 
+# Next.js
+.next/
+out/
+
 # Vector Database (ChromaDB)
 backend/chroma_db/
 chroma_db/

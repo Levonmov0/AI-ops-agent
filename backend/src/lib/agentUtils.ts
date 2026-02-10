@@ -116,3 +116,54 @@ export async function executeTools(
 
   return { messages: results };
 }
+
+/**
+ * Wraps the common agent pattern: nullable agent + shouldContinue/callLlm/executeTools wrappers.
+ *
+ * Eliminates the duplicated boilerplate across ragAgent.ts and bookingAgent.ts.
+ */
+export class AgentNode {
+  private agent: Agent | null = null;
+  private name: string;
+
+  constructor(name: string) {
+    this.name = name;
+  }
+
+  initialize(config: AgentConfig): void {
+    this.agent = createAgent(config);
+  }
+
+  private getAgent(): Agent {
+    if (!this.agent) {
+      throw new Error(`${this.name} not initialized.`);
+    }
+    return this.agent;
+  }
+
+  shouldContinue = (state: ConversationStateType): boolean => {
+    return shouldContinue(state);
+  };
+
+  callLlm = async (
+    state: ConversationStateType
+  ): Promise<Partial<ConversationStateType>> => {
+    return callLlm(this.getAgent(), state);
+  };
+
+  executeTools = async (
+    state: ConversationStateType
+  ): Promise<Partial<ConversationStateType>> => {
+    return executeTools(this.getAgent(), state);
+  };
+}
+
+/**
+ * Extracts the text content from the last message in a result.
+ */
+export function getResponseContent(messages: BaseMessage[]): string {
+  const lastMessage = messages[messages.length - 1];
+  return typeof lastMessage.content === "string"
+    ? lastMessage.content
+    : JSON.stringify(lastMessage.content);
+}

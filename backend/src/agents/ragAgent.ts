@@ -4,16 +4,9 @@
  * Uses a vector store to find relevant gym information and context.
  */
 
-import type { ConversationStateType } from "../graph/state.js";
 import { retrieverTool, setRetriever } from "../tools/ragTools.js";
 import { loadPdf, createVectorStore, getRetriever } from "../lib/vectorStore.js";
-import {
-  createAgent,
-  shouldContinue,
-  callLlm,
-  executeTools,
-  type Agent,
-} from "../lib/agentUtils.js";
+import { AgentNode } from "../lib/agentUtils.js";
 
 const SYSTEM_PROMPT = `
 You are an assistant that answers questions about Strength & Conditioning Gym.
@@ -21,7 +14,7 @@ Use only the provided context. If the answer is not in the context, say you don'
 Be concise and to the point.
 `;
 
-let agent: Agent | null = null;
+const ragNode = new AgentNode("RAG");
 
 /**
  * Initializes the RAG pipeline: loads PDF, creates embeddings, and configures the agent.
@@ -38,7 +31,7 @@ export async function initializeRagComponents(
   const retriever = getRetriever(vectorStore);
   setRetriever(retriever);
 
-  agent = createAgent({
+  ragNode.initialize({
     systemPrompt: SYSTEM_PROMPT,
     tools: [retrieverTool],
   });
@@ -46,27 +39,6 @@ export async function initializeRagComponents(
   console.log("RAG components initialized.");
 }
 
-/** Checks if the agent has pending tool calls. */
-export function shouldContinueRag(state: ConversationStateType): boolean {
-  return shouldContinue(state);
-}
-
-/** Invokes the LLM with the RAG system prompt. */
-export async function callLlmRag(
-  state: ConversationStateType
-): Promise<Partial<ConversationStateType>> {
-  if (!agent) {
-    throw new Error("RAG components not initialized.");
-  }
-  return callLlm(agent, state);
-}
-
-/** Executes retriever tool calls from the last message. */
-export async function executeRagTools(
-  state: ConversationStateType
-): Promise<Partial<ConversationStateType>> {
-  if (!agent) {
-    throw new Error("RAG components not initialized.");
-  }
-  return executeTools(agent, state);
-}
+export const shouldContinueRag = ragNode.shouldContinue;
+export const callLlmRag = ragNode.callLlm;
+export const executeRagTools = ragNode.executeTools;

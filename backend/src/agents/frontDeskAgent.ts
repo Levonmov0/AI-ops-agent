@@ -17,8 +17,6 @@ For simple greetings, small talk, or thank you messages - respond directly in a 
 For questions or requests that need specialist help, respond with ONLY ONE of these agent names:
 - RAGAgent (for gym info, policies, hours, location)
 - BookingAgent (for class bookings, cancellations or listing classes and anything related to classes)
-- SubscriptionAgent (for membership management)
-- OnboardingAgent (for new member setup)
 
 Examples:
 User: "Hi!" → "Hello! Welcome to our gym. How can I assist you today?"
@@ -30,8 +28,6 @@ User: "Thanks!" → "You're welcome! Have a great workout!"
 const VALID_AGENTS = new Set([
   "RAGAgent",
   "BookingAgent",
-  "SubscriptionAgent",
-  "OnboardingAgent",
 ]);
 
 function createFrontDeskLlm(): ChatOpenAI {

@@ -9,6 +9,7 @@ import { HumanMessage, BaseMessage } from "@langchain/core/messages";
 import { initializeRagComponents } from "./agents/ragAgent.js";
 import { initializeBookingComponents } from "./agents/bookingAgent.js";
 import { buildMasterGraph } from "./graph/masterGraph.js";
+import { getResponseContent } from "./lib/agentUtils.js";
 import "dotenv/config";
 
 /** Runs the interactive CLI conversation loop. */
@@ -43,11 +44,7 @@ async function run(compiledGraph: ReturnType<typeof buildMasterGraph>) {
       try {
         const result = await compiledGraph.invoke({ messages: conversationHistory });
         conversationHistory = result.messages as BaseMessage[];
-        const lastMessage = result.messages[result.messages.length - 1];
-        const content =
-          typeof lastMessage.content === "string"
-            ? lastMessage.content
-            : JSON.stringify(lastMessage.content);
+        const content = getResponseContent(result.messages);
         console.log(`Assistant: ${content}\n`);
       } catch (error) {
         console.error(`Error: ${error}\n`);

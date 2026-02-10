@@ -4,15 +4,8 @@
  * Interacts with Supabase to manage gym class reservations.
  */
 
-import type { ConversationStateType } from "../graph/state.js";
 import { bookingTools } from "../tools/bookingTools.js";
-import {
-  createAgent,
-  shouldContinue,
-  callLlm,
-  executeTools,
-  type Agent,
-} from "../lib/agentUtils.js";
+import { AgentNode } from "../lib/agentUtils.js";
 
 const SYSTEM_PROMPT = `
 Booking:
@@ -26,10 +19,18 @@ Availability / listing:
 - If the user asks if a specific class has spots, call check_availability(class_name, date).
 - NEVER ask the user for YYYY-MM-DD; you must compute it.
 
+Listing bookings:
+- If the user wants to see their bookings, call list_member_bookings(member_id).
+- Show results clearly with booking IDs so the user can reference them for cancellation.
+
 Cancellation:
 - Extract booking_id and member_id.
+- If the user doesn't know their booking_id, offer to list their bookings first.
 - If missing, ask for the missing value.
-- If both are present, ask: Are you sure? Reply "yes" to confirm.
+- If both are present and when asking for cancellation confirmation, respond EXACTLY in this format:
+    [CONFIRM_ACTION]
+    {"action": "cancel_booking", "message": "Cancel booking ABC123 for member M456?"}
+    [/CONFIRM_ACTION]
 - Only AFTER an explicit "yes" can you execute the tool
 - If "no" or anything else, abort and confirm it was not canceled.
 
@@ -40,11 +41,11 @@ Rules:
 - Always call get_current_date before computing it yourself
 `;
 
-let agent: Agent | null = null;
+const bookingNode = new AgentNode("Booking");
 
 /** Initializes the booking agent with its tools. */
 export function initializeBookingComponents(): void {
-  agent = createAgent({
+  bookingNode.initialize({
     systemPrompt: SYSTEM_PROMPT,
     tools: bookingTools,
   });
@@ -52,27 +53,6 @@ export function initializeBookingComponents(): void {
   console.log("Booking components initialized.");
 }
 
-/** Checks if the agent has pending tool calls. */
-export function shouldContinueBooking(state: ConversationStateType): boolean {
-  return shouldContinue(state);
-}
-
-/** Invokes the LLM with the booking system prompt. */
-export async function callLlmBooking(
-  state: ConversationStateType
-): Promise<Partial<ConversationStateType>> {
-  if (!agent) {
-    throw new Error("Booking components not initialized.");
-  }
-  return callLlm(agent, state);
-}
-
-/** Executes booking tool calls from the last message. */
-export async function executeBookingTools(
-  state: ConversationStateType
-): Promise<Partial<ConversationStateType>> {
-  if (!agent) {
-    throw new Error("Booking components not initialized.");
-  }
-  return executeTools(agent, state);
-}
+export const shouldContinueBooking = bookingNode.shouldContinue;
+export const callLlmBooking = bookingNode.callLlm;
+export const executeBookingTools = bookingNode.executeTools;
