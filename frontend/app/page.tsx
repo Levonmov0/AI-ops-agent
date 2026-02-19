@@ -19,6 +19,7 @@ export default function Home() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [agent, setAgent] = useState<string>("Front Desk Agent");
   const [toolsUsed, setToolsUsed] = useState<string[]>([]);
+  const [messagesRemaining, setMessagesRemaining] = useState<number | null>(null);
 
 
   const handleTextAreaInput = () => {
@@ -38,10 +39,11 @@ export default function Home() {
   }, [messages]);
 
   const pendingConfirmation = messages.length > 0 && messages[messages.length - 1].type === "confirmation" && !messages[messages.length - 1].confirmed;
+  const limitReached = messagesRemaining === 0;
 
   const sendMessage = async (message?: string) => {
     const text = message || input;
-    if(!text.trim() || isLoading) return;
+    if(!text.trim() || isLoading || limitReached) return;
     
 
     const userMessage: Message = {role: "user", content: text};
@@ -59,6 +61,14 @@ export default function Home() {
           sessionId: sessionId
         }),
       });
+
+      const remaining = res.headers.get("RateLimit-Remaining");
+      if (remaining !== null) setMessagesRemaining(parseInt(remaining, 10));
+
+      if (res.status === 429) {
+        const errData = await res.json().catch(() => ({ error: "Daily limit reached." }));
+        throw new Error(errData.error);
+      }
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({ error: "Server error" }));
@@ -150,10 +160,12 @@ export default function Home() {
                   <div className="flex-1 space-y-2">
                     <div className="border border-red-500/20 bg-red-500/5 rounded-xl px-4 py-3">
                       <p className="text-red-300 text-sm">{msg.content}</p>
-                      <button onClick={() => sendMessage(messages.filter(m => m.role === "user").pop()?.content)}
-                        className="mt-2 px-3 py-1 text-xs bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-lg transition-colors">
-                        Retry
-                      </button>
+                      {!limitReached && (
+                        <button onClick={() => sendMessage(messages.filter(m => m.role === "user").pop()?.content)}
+                          className="mt-2 px-3 py-1 text-xs bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-lg transition-colors">
+                          Retry
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -195,6 +207,11 @@ export default function Home() {
               <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" /></svg>
               {toolsUsed.length > 0 ? toolsUsed.join(", ") : "No tools used"}
             </div>
+            {messagesRemaining !== null && (
+              <div className={`mb-4 border rounded-lg px-3 py-1.5 flex items-center gap-2 text-[11px] ${limitReached ? "bg-red-500/10 border-red-500/40 text-red-400" : "bg-[#1a1d2e] border-white/5 text-gray-300"}`}>
+                {messagesRemaining} / 15 messages left
+              </div>
+            )}
           </div>
 
           <div className="w-full bg-[#161926]/80 backdrop-blur-sm border border-white/10 rounded-2xl p-4 flex items-end gap-3 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
@@ -208,13 +225,13 @@ export default function Home() {
                 } 
               }}
               ref={textareaRef}
-              disabled={pendingConfirmation}
-              placeholder={pendingConfirmation ? "Please confirm or cancel the action above..." : "Ask about classes, bookings, or gym info..."}
-              className={`bg-transparent flex-1 resize-none outline-none text-sm py-1 ${pendingConfirmation ? "text-gray-500 placeholder:text-gray-600 cursor-not-allowed" : "text-gray-200 placeholder:text-gray-600"}`}
+              disabled={pendingConfirmation || limitReached}
+              placeholder={limitReached ? "Daily demo limit reached. Come back tomorrow." : pendingConfirmation ? "Please confirm or cancel the action above..." : "Ask about classes, bookings, or gym info..."}
+              className={`bg-transparent flex-1 resize-none outline-none text-sm py-1 ${pendingConfirmation || limitReached ? "text-gray-500 placeholder:text-gray-600 cursor-not-allowed" : "text-gray-200 placeholder:text-gray-600"}`}
               onInput={handleTextAreaInput}
               rows={1}
             />
-            <button onClick={() => sendMessage()} disabled={isLoading || pendingConfirmation} className={`p-2 rounded-lg transition-colors ${pendingConfirmation ? "bg-white/5 cursor-not-allowed opacity-50" : "bg-white/5 hover:bg-white/10"}`}>
+            <button onClick={() => sendMessage()} disabled={isLoading || pendingConfirmation || limitReached} className={`p-2 rounded-lg transition-colors ${pendingConfirmation || limitReached ? "bg-white/5 cursor-not-allowed opacity-50" : "bg-white/5 hover:bg-white/10"}`}>
               {isLoading ? (
                 <svg className="w-4 h-4 animate-spin text-gray-400" viewBox="0 0 24 24" fill="none">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />

@@ -56,8 +56,6 @@ coverage/
 .langchain/
 .langsmith/
 
-# Claude Code plans
-.claude/
 
 # Local data / experiments
 data/

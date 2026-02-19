@@ -6,6 +6,7 @@
 
 import express, { Request, Response } from "express";
 import cors from "cors";
+import rateLimit from "express-rate-limit";
 import { HumanMessage, BaseMessage } from "@langchain/core/messages";
 import { initializeRagComponents } from "../agents/ragAgent.js";
 import { initializeBookingComponents } from "../agents/bookingAgent.js";
@@ -14,8 +15,18 @@ import { getResponseContent } from "../lib/agentUtils.js";
 import "dotenv/config";
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  exposedHeaders: ["RateLimit-Limit", "RateLimit-Remaining", "RateLimit-Reset"],
+}));
 app.use(express.json());
+
+const chatRateLimiter = rateLimit({
+  windowMs: 24 * 60 * 60 * 1000,
+  max: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Demo limit reached: 15 messages per IP per day. Please try again tomorrow." },
+});
 
 const sessions = new Map<string, BaseMessage[]>();
 let compiledGraph: ReturnType<typeof buildMasterGraph>;
@@ -29,7 +40,7 @@ app.get("/health", (_req: Request, res: Response) => {
  *
  * @example POST /api/chat { "message": "Hello", "sessionId": "optional" }
  */
-app.post("/api/chat", async (req: Request, res: Response) => {
+app.post("/api/chat", chatRateLimiter, async (req: Request, res: Response) => {
   const { message, sessionId = crypto.randomUUID() } = req.body;
 
   if (!message) {
